@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="jumbotron">
+    <div class="container">
+      <h1>{% trans %}Leaderboard{% endtrans %}</h1>
+    </div>
+  </div>
+  <div class="container">
+    {% include "components/errors.html" %}
+
+    {% set podium = standings[:3] %}
+    {% set remaining_standings = standings[3:] %}
+
+    <div id="scoreboard" class="row">
+      <div class="col-12">
+        <div class="leaderboard-switcher" role="tablist" aria-label="Leaderboard view switcher">
+          <a
+            href="{{ url_for('scoreboard.listing', view='users') }}"
+            class="leaderboard-switcher__button"
+            {% if active_view == 'users' %}aria-current="page" data-active="true"{% endif %}
+          >
+            Solo
+          </a>
+          <a
+            href="{{ url_for('scoreboard.listing', view='teams') }}"
+            class="leaderboard-switcher__button"
+            {% if active_view == 'teams' %}aria-current="page" data-active="true"{% endif %}
+          >
+            Team
+          </a>
+        </div>
+      </div>
+
+      <div class="col-md-12" {% if standings %}style="display:none"{% endif %}>
+        <h3 class="text-center text-muted">{% trans %}Leaderboard is empty{% endtrans %}</h3>
+      </div>
+
+      <div class="col-md-12" {% if not standings %}style="display:none"{% endif %}>
+        <div class="leaderboard-shell">
+          <div class="leaderboard-podium" {% if not podium %}style="display:none"{% endif %}>
+            {% if podium|length >= 2 %}
+              <div class="leaderboard-podium-card leaderboard-podium-second">
+                <div class="leaderboard-podium-place">2</div>
+                <div class="leaderboard-podium-rank">{% trans %}Runner-up{% endtrans %}</div>
+                <a class="leaderboard-podium-name" href="{{ podium[1].account_url }}">{{ podium[1].name }}</a>
+                <div class="leaderboard-podium-score">
+                  <span>{{ podium[1].score }}</span>
+                  <small>{% trans %}Points{% endtrans %}</small>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if podium|length >= 1 %}
+              <div class="leaderboard-podium-card leaderboard-podium-first">
+                <div class="leaderboard-podium-place">1</div>
+                <div class="leaderboard-podium-rank">{% trans %}Champion{% endtrans %}</div>
+                <a class="leaderboard-podium-name" href="{{ podium[0].account_url }}">{{ podium[0].name }}</a>
+                <div class="leaderboard-podium-score">
+                  <span>{{ podium[0].score }}</span>
+                  <small>{% trans %}Points{% endtrans %}</small>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if podium|length >= 3 %}
+              <div class="leaderboard-podium-card leaderboard-podium-third">
+                <div class="leaderboard-podium-place">3</div>
+                <div class="leaderboard-podium-rank">{% trans %}Third Place{% endtrans %}</div>
+                <a class="leaderboard-podium-name" href="{{ podium[2].account_url }}">{{ podium[2].name }}</a>
+                <div class="leaderboard-podium-score">
+                  <span>{{ podium[2].score }}</span>
+                  <small>{% trans %}Points{% endtrans %}</small>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="leaderboard-table-wrap">
+            <table class="table table-striped align-middle leaderboard-table">
+              <thead>
+              <tr>
+                <th style="width: 10px">{% trans %}Place{% endtrans %}</th>
+                <th class="text-start ps-3">{{ view_label }}</th>
+                <th>{% trans %}Points{% endtrans %}</th>
+              </tr>
+              </thead>
+              <tbody>
+              {% for standing in podium %}
+                <tr class="leaderboard-featured-row">
+                  <th scope="row" class="text-center">{{ standing.pos }}</th>
+                  <td class="text-start"><a href="{{ standing.account_url }}">{{ standing.name }}</a></td>
+                  <td>{{ standing.score }}</td>
+                </tr>
+              {% endfor %}
+
+              {% for standing in remaining_standings %}
+                <tr>
+                  <th scope="row" class="text-center">{{ standing.pos }}</th>
+                  <td class="text-start"><a href="{{ standing.account_url }}">{{ standing.name }}</a></td>
+                  <td>{{ standing.score }}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <style>
+    .leaderboard-switcher {
+      display: inline-flex;
+      gap: 0.5rem;
+      padding: 0.4rem;
+      margin: 0 0 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(10, 12, 18, 0.92);
+    }
+
+    .leaderboard-switcher__button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1.15rem;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.68);
+      font-weight: 600;
+      line-height: 1;
+      text-decoration: none;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .leaderboard-switcher__button[data-active="true"] {
+      background: rgba(34, 197, 94, 0.18);
+      color: #fff;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.24) inset;
+    }
+
+    .leaderboard-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .leaderboard-podium {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .leaderboard-podium-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 1.35rem 1.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(12, 14, 20, 0.96), rgba(8, 10, 16, 0.96));
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+    }
+
+    .leaderboard-podium-first {
+      min-height: 280px;
+      border-color: rgba(34, 197, 94, 0.26);
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(34, 197, 94, 0.08) inset;
+    }
+
+    .leaderboard-podium-second,
+    .leaderboard-podium-third {
+      min-height: 240px;
+    }
+
+    .leaderboard-podium-place {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .leaderboard-podium-rank {
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 0.76rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .leaderboard-podium-name {
+      color: #fff !important;
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-decoration: none;
+      word-break: break-word;
+    }
+
+    .leaderboard-podium-score {
+      display: inline-flex;
+      align-items: end;
+      gap: 0.45rem;
+      margin-top: auto;
+      color: #fff;
+    }
+
+    .leaderboard-podium-score span {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .leaderboard-podium-score small {
+      color: rgba(255, 255, 255, 0.62);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .leaderboard-table-wrap {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(12, 14, 20, 0.96), rgba(8, 10, 16, 0.96));
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+    }
+
+    .leaderboard-table {
+      margin-bottom: 0;
+    }
+
+    .leaderboard-featured-row {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    @media (max-width: 991.98px) {
+      .leaderboard-podium {
+        grid-template-columns: 1fr;
+      }
+
+      .leaderboard-podium-card,
+      .leaderboard-podium-first,
+      .leaderboard-podium-second,
+      .leaderboard-podium-third {
+        min-height: auto;
+      }
+    }
+  </style>
+{% endblock %}
